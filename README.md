@@ -1,4 +1,4 @@
-# PetCarePal Landing Page
+# Beauty Queen Landing Page
 
 A modern landing page for PetCarePal with email verification functionality.
 
