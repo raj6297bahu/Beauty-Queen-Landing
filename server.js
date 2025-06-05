@@ -7,11 +7,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: [
-        'https://raj6297bahu.github.io',
-        'http://localhost:3000',
-        'https://beauty-queen-landing.onrender.com'
-    ],
+    origin: '*',  // Allow all origins temporarily for testing
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type']
 }));
@@ -19,12 +15,12 @@ app.use(express.static(__dirname));
 
 // Gmail configuration
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: process.env.SMTP_PORT || 587,
+    secure: false,
     auth: {
-        user: 'drajmukherjee@gmail.com',
-        pass: 'sxhe xzpa tdwp oesz'
+        user: process.env.SMTP_USER || 'drajmukherjee@gmail.com',
+        pass: process.env.SMTP_PASS || 'sxhe xzpa tdwp oesz'
     },
     tls: {
         rejectUnauthorized: false
@@ -51,6 +47,7 @@ function generateOTP() {
 app.post('/send-otp', async (req, res) => {
     console.log('Received request to send OTP');
     console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
     
     const { email } = req.body;
     console.log('Email to send OTP:', email);
@@ -60,30 +57,30 @@ app.post('/send-otp', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
-    const otp = generateOTP();
-
-    const mailOptions = {
-        from: {
-            name: 'Beauty Queen',
-            address: 'drajmukherjee@gmail.com'
-        },
-        to: email,
-        subject: 'Your OTP for Beauty Queen Verification',
-        text: `OTP verification for Beauty Queen is: ${otp}`,
-        html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #333;">Your OTP for Beauty Queen Verification</h2>
-                <p>Hello,</p>
-                <p>OTP verification for Beauty Queen is:</p>
-                <h1 style="color: #4CAF50; font-size: 32px; letter-spacing: 5px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px;">${otp}</h1>
-                <p>This OTP will expire in 5 minutes.</p>
-                <p>If you didn't request this OTP, please ignore this email.</p>
-                <p>Best regards,<br>Beauty Queen Team</p>
-            </div>
-        `
-    };
-
     try {
+        const otp = generateOTP();
+
+        const mailOptions = {
+            from: {
+                name: 'Beauty Queen',
+                address: process.env.SMTP_USER || 'drajmukherjee@gmail.com'
+            },
+            to: email,
+            subject: 'Your OTP for Beauty Queen Verification',
+            text: `OTP verification for Beauty Queen is: ${otp}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">Your OTP for Beauty Queen Verification</h2>
+                    <p>Hello,</p>
+                    <p>OTP verification for Beauty Queen is:</p>
+                    <h1 style="color: #4CAF50; font-size: 32px; letter-spacing: 5px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 5px;">${otp}</h1>
+                    <p>This OTP will expire in 5 minutes.</p>
+                    <p>If you didn't request this OTP, please ignore this email.</p>
+                    <p>Best regards,<br>Beauty Queen Team</p>
+                </div>
+            `
+        };
+
         console.log('Attempting to send email...');
         console.log('Mail options:', mailOptions);
         
@@ -124,12 +121,17 @@ app.post('/verify-otp', (req, res) => {
     }
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Serve index.html for the root route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Open http://localhost:${PORT} in your browser`);

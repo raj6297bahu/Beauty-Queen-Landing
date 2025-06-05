@@ -16,19 +16,25 @@ async function handleOTPGeneration(email) {
         responseMessage.className = "response-message";
         
         console.log('Sending OTP request to:', email);
+        console.log('Backend URL:', BACKEND_URL);
+        
         const response = await fetch(`${BACKEND_URL}/send-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({ email })
         });
         
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
         if (!response.ok) {
-            throw new Error('Backend server is not available. Please try again later.');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Server error: ${response.status}`);
         }
         
-        console.log('Response status:', response.status);
         const data = await response.json();
         console.log('Response data:', data);
         
