@@ -1,6 +1,6 @@
-# PetCarePal Landing Page
+# Beauty Queen Landing Page
 
-A modern landing page for PetCarePal with email verification functionality.
+A modern landing page for Beauty Queen with email verification functionality.
 
 ## Features
 
@@ -13,8 +13,8 @@ A modern landing page for PetCarePal with email verification functionality.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/raj6297bahu/petcarepal-landing.git
-cd petcarepal-landing
+git clone https://github.com/raj6297bahu/beauty-queen-landing.git
+cd beauty-queen-landing
 ```
 
 2. Install dependencies:

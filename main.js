@@ -1,5 +1,7 @@
 let generatedOTP = null;
-const BACKEND_URL = 'http://localhost:3000'; // Local server URL
+const BACKEND_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://your-backend-url.com'  // Replace this with your actual backend URL when deployed
+    : 'http://localhost:3000';
 
 // Function to handle OTP generation and sending
 async function handleOTPGeneration(email) {
