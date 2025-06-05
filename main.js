@@ -1,5 +1,5 @@
 let generatedOTP = null;
-const BACKEND_URL = 'http://localhost:3000'; // Local server URL
+const BACKEND_URL = 'https://beauty-queen-landing.onrender.com'; // Updated Render deployment URL
 
 // Function to handle OTP generation and sending
 async function handleOTPGeneration(email) {
@@ -23,6 +23,10 @@ async function handleOTPGeneration(email) {
             },
             body: JSON.stringify({ email })
         });
+        
+        if (!response.ok) {
+            throw new Error('Backend server is not available. Please try again later.');
+        }
         
         console.log('Response status:', response.status);
         const data = await response.json();

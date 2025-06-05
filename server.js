@@ -7,7 +7,11 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: '*',
+    origin: [
+        'https://raj6297bahu.github.io',
+        'http://localhost:3000',
+        'https://beauty-queen-landing.onrender.com'
+    ],
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type']
 }));
