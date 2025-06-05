@@ -15,12 +15,13 @@ app.use(express.static(__dirname));
 
 // Gmail configuration
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || 587,
+    service: 'gmail',  // Using Gmail service
+    host: 'smtp.gmail.com',
+    port: 587,
     secure: false,
     auth: {
-        user: process.env.SMTP_USER || 'drajmukherjee@gmail.com',
-        pass: process.env.SMTP_PASS || 'sxhe xzpa tdwp oesz'
+        user: 'snehabanerjee2701@gmail.com',  // New sender email
+        pass: 'oqfv ndcb oovz fhti'  // You need to generate a new app password for this email
     },
     tls: {
         rejectUnauthorized: false
@@ -33,6 +34,14 @@ transporter.verify(function(error, success) {
         console.log('Email configuration error:', error);
     } else {
         console.log('Email server is ready to send messages');
+        console.log('Current SMTP Configuration:', {
+            host: transporter.options.host,
+            port: transporter.options.port,
+            secure: transporter.options.secure,
+            auth: {
+                user: transporter.options.auth.user
+            }
+        });
     }
 });
 
@@ -47,7 +56,6 @@ function generateOTP() {
 app.post('/send-otp', async (req, res) => {
     console.log('Received request to send OTP');
     console.log('Request body:', req.body);
-    console.log('Request headers:', req.headers);
     
     const { email } = req.body;
     console.log('Email to send OTP:', email);
@@ -59,11 +67,12 @@ app.post('/send-otp', async (req, res) => {
 
     try {
         const otp = generateOTP();
+        console.log('Generated OTP for:', email);
 
         const mailOptions = {
             from: {
                 name: 'Beauty Queen',
-                address: process.env.SMTP_USER || 'drajmukherjee@gmail.com'
+                address: 'snehabanerjee2701@gmail.com'  // New sender email
             },
             to: email,
             subject: 'Your OTP for Beauty Queen Verification',
@@ -81,11 +90,15 @@ app.post('/send-otp', async (req, res) => {
             `
         };
 
-        console.log('Attempting to send email...');
-        console.log('Mail options:', mailOptions);
+        console.log('Attempting to send email with configuration:', {
+            from: mailOptions.from,
+            to: mailOptions.to,
+            subject: mailOptions.subject
+        });
         
         const info = await transporter.sendMail(mailOptions);
         console.log('Email sent successfully:', info.response);
+        console.log('Message ID:', info.messageId);
         res.json({ success: true, otp: otp });
     } catch (error) {
         console.error('Error sending email:', error);
