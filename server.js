@@ -13,15 +13,15 @@ app.use(cors({
 }));
 app.use(express.static(__dirname));
 
-// Gmail configuration
+// Gmail configuration - using environment variables for security
 const transporter = nodemailer.createTransport({
     service: 'gmail',  // Using Gmail service
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
     auth: {
-        user: 'snehabanerjee2701@gmail.com',  // New sender email
-        pass: 'oqfv ndcb oovz fhti'  // You need to generate a new app password for this email
+        user: process.env.EMAIL_USER || 'snehabanerjee2701@gmail.com',  // Use env var or fallback
+        pass: process.env.EMAIL_PASS || 'oqfv ndcb oovz fhti'  // Use env var or fallback
     },
     tls: {
         rejectUnauthorized: false
@@ -72,7 +72,7 @@ app.post('/send-otp', async (req, res) => {
         const mailOptions = {
             from: {
                 name: 'Beauty Queen',
-                address: 'snehabanerjee2701@gmail.com'  // New sender email
+                address: process.env.EMAIL_USER || 'snehabanerjee2701@gmail.com'  // Use env var or fallback
             },
             to: email,
             subject: 'Your OTP for Beauty Queen Verification',
