@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - Beauty Queen</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .guide-section {
+            margin: 3rem 0;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        .guide-section:nth-child(1) { animation-delay: 0.1s; }
+        .guide-section:nth-child(2) { animation-delay: 0.2s; }
+        .guide-section:nth-child(3) { animation-delay: 0.3s; }
+        .guide-section:nth-child(4) { animation-delay: 0.4s; }
+        .guide-section:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+        }
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .step-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-right: 1rem;
+        }
+        .animation-demo {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            margin: 2rem 0;
+        }
+        .demo-icon {
+            font-size: 5rem;
+            color: var(--primary-color);
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="logo">
+                <i class="fas fa-crown"></i> Beauty Queen
+            </a>
+            <ul class="nav-links">
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/shop">Shop</a></li>
+                <li><a href="/cart">Cart</a></li>
+                <li><a href="/feedback">Feedback</a></li>
+                <li><a href="#" onclick="logout(); return false;" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card" style="text-align: center;">
+            <h1>How to Use Beauty Queen</h1>
+            <p>Follow these simple steps to get started</p>
+        </div>
+
+        <div class="guide-section">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h2><i class="fas fa-user-plus step-icon"></i> Create Your Account</h2>
+                    <p>Sign up with your email address. You'll receive an OTP for verification. Once verified, you can start shopping!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="guide-section">
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h2><i class="fas fa-store step-icon"></i> Browse Products</h2>
+                    <p>Explore our wide range of beauty products. Use filters to find products by category or search for specific items.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="guide-section">
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h2><i class="fas fa-cart-plus step-icon"></i> Add to Cart</h2>
+                    <p>Click "Add to Cart" on any product you like. You can adjust quantities in your cart before checkout.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="guide-section">
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h2><i class="fas fa-credit-card step-icon"></i> Checkout & Payment</h2>
+                    <p>Review your cart and proceed to checkout. Choose between Cash on Delivery or Online Payment via Razorpay.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="guide-section">
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h2><i class="fas fa-box step-icon"></i> Track Your Order</h2>
+                    <p>After placing your order, you can track it from your dashboard. We'll keep you updated on the delivery status.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="animation-demo">
+            <div class="demo-icon">
+                <i class="fas fa-shopping-bag"></i>
+            </div>
+            <h2>Happy Shopping!</h2>
+            <p>Enjoy your beauty journey with Beauty Queen</p>
+            <a href="/shop" class="btn btn-primary" style="margin-top: 1rem;">
+                Start Shopping Now
+            </a>
+        </div>
+
+        <div class="card">
+            <h2>Tips & Tricks</h2>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 1rem; border-bottom: 1px solid #eee;">
+                    <i class="fas fa-check-circle" style="color: var(--primary-color); margin-right: 1rem;"></i>
+                    Use the search bar to quickly find products
+                </li>
+                <li style="padding: 1rem; border-bottom: 1px solid #eee;">
+                    <i class="fas fa-check-circle" style="color: var(--primary-color); margin-right: 1rem;"></i>
+                    Filter by category to browse specific product types
+                </li>
+                <li style="padding: 1rem; border-bottom: 1px solid #eee;">
+                    <i class="fas fa-check-circle" style="color: var(--primary-color); margin-right: 1rem;"></i>
+                    Check product availability before adding to cart
+                </li>
+                <li style="padding: 1rem;">
+                    <i class="fas fa-check-circle" style="color: var(--primary-color); margin-right: 1rem;"></i>
+                    Share your feedback to help us improve
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+</body>
+</html>
+

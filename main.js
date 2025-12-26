@@ -4,7 +4,7 @@ let emailOTPMap = {}; // Store OTP per email to avoid regenerating
 let debounceTimer = null;
 
 // Determine backend URL based on environment
-// For localhost, use port 3000, otherwise use the same origin (works for Vercel)
+// For localhost, use port 3000, otherwise use the same origin
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
     ? `http://${window.location.hostname}:3000` 
     : window.location.origin;

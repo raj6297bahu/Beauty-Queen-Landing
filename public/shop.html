@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - Beauty Queen</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        .product-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(233, 30, 99, 0.3);
+        }
+        .product-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #ffdde1, #ee9ca7);
+        }
+        .product-info {
+            padding: 1.5rem;
+        }
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0.5rem 0;
+        }
+        .product-original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 1rem;
+        }
+        .add-to-cart-btn {
+            width: 100%;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="logo">
+                <i class="fas fa-crown"></i> Beauty Queen
+            </a>
+            <ul class="nav-links">
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/cart"><i class="fas fa-shopping-cart"></i> Cart</a></li>
+                <li><a href="/guide">Guide</a></li>
+                <li><a href="/feedback">Feedback</a></li>
+                <li><a href="#" onclick="logout(); return false;" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="shop-header">
+            <h1>Our Products</h1>
+            <div class="filters">
+                <select id="categoryFilter" class="form-group" style="padding: 0.5rem; border-radius: 8px;">
+                    <option value="">All Categories</option>
+                    <option value="Skincare">Skincare</option>
+                    <option value="Makeup">Makeup</option>
+                    <option value="Haircare">Haircare</option>
+                    <option value="Fragrance">Fragrance</option>
+                    <option value="Accessories">Accessories</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Search products..." 
+                       style="padding: 0.5rem; border-radius: 8px; border: 2px solid #e0e0e0;">
+            </div>
+        </div>
+
+        <div id="productsContainer" class="products-grid">
+            <p>Loading products...</p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        if (!requireAuth()) {
+            // Will redirect to login
+        }
+
+        let products = [];
+
+        async function loadProducts() {
+            try {
+                const category = document.getElementById('categoryFilter').value;
+                const search = document.getElementById('searchInput').value;
+                
+                const params = {};
+                if (category) params.category = category;
+                if (search) params.search = search;
+
+                const data = await productsAPI.getAll(params);
+                products = data.products;
+                displayProducts(products);
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('productsContainer').innerHTML = 
+                    '<p class="alert alert-error">Error loading products</p>';
+            }
+        }
+
+        function displayProducts(productsList) {
+            const container = document.getElementById('productsContainer');
+            
+            if (productsList.length === 0) {
+                container.innerHTML = '<p>No products found</p>';
+                return;
+            }
+
+            container.innerHTML = productsList.map(product => `
+                <div class="product-card">
+                    <img src="${product.image}" alt="${product.name}" class="product-image" 
+                         onerror="this.src='https://via.placeholder.com/300?text=${encodeURIComponent(product.name)}'">
+                    <div class="product-info">
+                        <h3>${product.name}</h3>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0.5rem 0;">${product.description.substring(0, 60)}...</p>
+                        <div class="product-price">
+                            ₹${product.price}
+                            ${product.originalPrice ? `<span class="product-original-price">₹${product.originalPrice}</span>` : ''}
+                        </div>
+                        <div style="margin: 0.5rem 0;">
+                            <small style="color: #666;">Category: ${product.category}</small>
+                            ${product.stock > 0 ? '<span style="color: green;">✓ In Stock</span>' : '<span style="color: red;">✗ Out of Stock</span>'}
+                        </div>
+                        <button onclick="addToCart('${product._id}')" 
+                                class="btn btn-primary add-to-cart-btn"
+                                ${product.stock === 0 ? 'disabled' : ''}>
+                            <i class="fas fa-cart-plus"></i> Add to Cart
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function addToCart(productId) {
+            try {
+                await cartAPI.add(productId, 1);
+                alert('Product added to cart!');
+            } catch (error) {
+                alert('Error adding to cart: ' + error.message);
+            }
+        }
+
+        document.getElementById('categoryFilter').addEventListener('change', loadProducts);
+        document.getElementById('searchInput').addEventListener('input', loadProducts);
+
+        loadProducts();
+    </script>
+</body>
+</html>
+

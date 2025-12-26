@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Beauty Queen</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .signup-container {
+            max-width: 500px;
+            width: 100%;
+        }
+        .input-icon {
+            position: relative;
+        }
+        .input-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        .input-icon input {
+            padding-left: 45px;
+        }
+        .otp-section {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <div class="card">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <i class="fas fa-crown" style="font-size: 3rem; color: var(--primary-color);"></i>
+                <h1 style="margin-top: 1rem;">Create Account</h1>
+                <p>Join Beauty Queen today</p>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <form id="signupForm">
+                <div class="form-group">
+                    <div class="input-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="name" placeholder="Full Name" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" placeholder="Email address" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-icon">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" id="phone" placeholder="Phone Number">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" placeholder="Password (min 6 characters)" required minlength="6">
+                    </div>
+                </div>
+
+                <div class="otp-section" id="otpSection">
+                    <div class="form-group">
+                        <button type="button" id="sendOtpBtn" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">
+                            <i class="fas fa-paper-plane"></i> Send OTP
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-icon">
+                            <i class="fas fa-key"></i>
+                            <input type="text" id="otp" placeholder="Enter OTP" maxlength="6">
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="originalOtp">
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <p>Already have an account? <a href="/login" style="color: var(--primary-color);">Login</a></p>
+                <p><a href="/" style="color: var(--primary-color);">← Back to Home</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let generatedOTP = null;
+
+        document.getElementById('email').addEventListener('blur', () => {
+            const email = document.getElementById('email').value;
+            if (email && email.includes('@')) {
+                document.getElementById('otpSection').style.display = 'block';
+            }
+        });
+
+        document.getElementById('sendOtpBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                showAlert('Please enter your email first', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('sendOtpBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+            try {
+                const data = await authAPI.sendOTP(email);
+                generatedOTP = data.otp;
+                document.getElementById('originalOtp').value = data.otp;
+                showAlert('OTP sent to your email!', 'success');
+                btn.innerHTML = '<i class="fas fa-check"></i> OTP Sent';
+            } catch (error) {
+                showAlert(error.message || 'Failed to send OTP', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+            }
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const otp = document.getElementById('otp').value;
+            const originalOtp = document.getElementById('originalOtp').value;
+
+            if (!originalOtp) {
+                showAlert('Please verify your email with OTP first', 'error');
+                return;
+            }
+
+            if (otp !== originalOtp) {
+                showAlert('Invalid OTP', 'error');
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+
+            try {
+                const data = await authAPI.signup({ name, email, phone, password, otp, originalOtp });
+                setToken(data.token);
+                showAlert('Account created successfully! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            } catch (error) {
+                showAlert(error.message || 'Signup failed', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Sign Up';
+            }
+        });
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>
+

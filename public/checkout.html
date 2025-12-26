@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Beauty Queen</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .checkout-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 2rem auto;
+        }
+        .checkout-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+        }
+        .payment-methods {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .payment-method {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+        .payment-method.active {
+            border-color: var(--primary-color);
+            background: rgba(233, 30, 99, 0.1);
+        }
+        .payment-method i {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        @media (max-width: 768px) {
+            .checkout-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="logo">
+                <i class="fas fa-crown"></i> Beauty Queen
+            </a>
+            <ul class="nav-links">
+                <li><a href="/shop">Shop</a></li>
+                <li><a href="/cart">Cart</a></li>
+                <li><a href="#" onclick="logout(); return false;" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Checkout</h1>
+
+        <div class="checkout-container">
+            <div>
+                <div class="checkout-section">
+                    <h2><i class="fas fa-shipping-fast"></i> Shipping Address</h2>
+                    <form id="shippingForm">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="tel" id="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Address *</label>
+                            <textarea id="address" rows="3" required></textarea>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>City *</label>
+                                <input type="text" id="city" required>
+                            </div>
+                            <div class="form-group">
+                                <label>State *</label>
+                                <input type="text" id="state" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Pincode *</label>
+                            <input type="text" id="pincode" required pattern="[0-9]{6}">
+                        </div>
+                    </form>
+                </div>
+
+                <div class="checkout-section">
+                    <h2><i class="fas fa-credit-card"></i> Payment Method</h2>
+                    <div class="payment-methods">
+                        <div class="payment-method" data-method="COD" onclick="selectPaymentMethod('COD')">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <h3>Cash on Delivery</h3>
+                            <p>Pay when you receive</p>
+                        </div>
+                        <div class="payment-method" data-method="Razorpay" onclick="selectPaymentMethod('Razorpay')">
+                            <i class="fas fa-credit-card"></i>
+                            <h3>Online Payment</h3>
+                            <p>Pay securely online</p>
+                        </div>
+                    </div>
+                    <input type="hidden" id="paymentMethod" value="COD">
+                </div>
+            </div>
+
+            <div>
+                <div class="checkout-section" style="position: sticky; top: 100px;">
+                    <h2>Order Summary</h2>
+                    <div id="orderSummary">
+                        <p>Loading...</p>
+                    </div>
+                    <hr style="margin: 1.5rem 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">
+                        <span>Total:</span>
+                        <span id="totalAmount">₹0</span>
+                    </div>
+                    <button onclick="placeOrder()" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-check"></i> Place Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        if (!requireAuth()) {
+            // Will redirect to login
+        }
+
+        let cart = [];
+        let selectedPaymentMethod = 'COD';
+
+        async function loadCart() {
+            try {
+                const data = await cartAPI.get();
+                cart = data.cart;
+                displayOrderSummary();
+            } catch (error) {
+                console.error('Error loading cart:', error);
+            }
+        }
+
+        function displayOrderSummary() {
+            const summary = document.getElementById('orderSummary');
+            const total = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+
+            if (cart.length === 0) {
+                summary.innerHTML = '<p>Your cart is empty. <a href="/shop">Continue Shopping</a></p>';
+                document.getElementById('totalAmount').textContent = '₹0';
+                return;
+            }
+
+            summary.innerHTML = cart.map(item => `
+                <div style="display: flex; justify-content: space-between; margin: 0.5rem 0; padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+                    <div>
+                        <strong>${item.product.name}</strong>
+                        <p style="font-size: 0.9rem; color: #666;">Qty: ${item.quantity}</p>
+                    </div>
+                    <strong>₹${item.product.price * item.quantity}</strong>
+                </div>
+            `).join('');
+
+            document.getElementById('totalAmount').textContent = `₹${total}`;
+        }
+
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            document.getElementById('paymentMethod').value = method;
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelector(`[data-method="${method}"]`).classList.add('active');
+        }
+
+        async function placeOrder() {
+            const form = document.getElementById('shippingForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            if (cart.length === 0) {
+                alert('Your cart is empty');
+                return;
+            }
+
+            const shippingAddress = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                pincode: document.getElementById('pincode').value
+            };
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            try {
+                const order = await ordersAPI.create({
+                    shippingAddress,
+                    paymentMethod: selectedPaymentMethod
+                });
+
+                if (selectedPaymentMethod === 'Razorpay' && order.razorpayOrderId) {
+                    // Razorpay payment
+                    const options = {
+                        key: order.razorpayKeyId,
+                        amount: order.order.totalAmount * 100,
+                        currency: 'INR',
+                        name: 'Beauty Queen',
+                        description: 'Order Payment',
+                        order_id: order.razorpayOrderId,
+                        handler: async function(response) {
+                            await ordersAPI.verifyPayment({
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                razorpaySignature: response.razorpay_signature
+                            });
+                            alert('Payment successful! Order placed.');
+                            window.location.href = '/dashboard';
+                        },
+                        prefill: {
+                            name: shippingAddress.name,
+                            contact: shippingAddress.phone,
+                            email: ''
+                        },
+                        theme: {
+                            color: '#e91e63'
+                        }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.on('payment.failed', function(response) {
+                        alert('Payment failed. Please try again.');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+                    });
+                    rzp.open();
+                } else {
+                    alert('Order placed successfully!');
+                    window.location.href = '/dashboard';
+                }
+            } catch (error) {
+                alert('Error placing order: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+            }
+        }
+
+        // Initialize
+        selectPaymentMethod('COD');
+        loadCart();
+    </script>
+</body>
+</html>
+

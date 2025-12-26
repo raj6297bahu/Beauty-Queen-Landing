@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - Beauty Queen</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .cart-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        .cart-item {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .cart-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        .cart-item-info {
+            flex: 1;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .quantity-controls button {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+        }
+        .summary-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+        @media (max-width: 768px) {
+            .cart-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="logo">
+                <i class="fas fa-crown"></i> Beauty Queen
+            </a>
+            <ul class="nav-links">
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/shop">Shop</a></li>
+                <li><a href="/guide">Guide</a></li>
+                <li><a href="/feedback">Feedback</a></li>
+                <li><a href="#" onclick="logout(); return false;" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Shopping Cart</h1>
+
+        <div class="cart-container">
+            <div id="cartItems">
+                <p>Loading cart...</p>
+            </div>
+
+            <div class="summary-card">
+                <h2>Order Summary</h2>
+                <div style="margin: 1rem 0;">
+                    <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">₹0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                        <span>Shipping:</span>
+                        <span id="shipping">Free</span>
+                    </div>
+                    <hr style="margin: 1rem 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700;">
+                        <span>Total:</span>
+                        <span id="total">₹0</span>
+                    </div>
+                </div>
+                <a href="/checkout" class="btn btn-primary" style="width: 100%; display: block; text-align: center; text-decoration: none;">
+                    <i class="fas fa-credit-card"></i> Proceed to Checkout
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        if (!requireAuth()) {
+            // Will redirect to login
+        }
+
+        let cart = [];
+
+        async function loadCart() {
+            try {
+                const data = await cartAPI.get();
+                cart = data.cart;
+                displayCart();
+                calculateTotal();
+            } catch (error) {
+                console.error('Error loading cart:', error);
+                document.getElementById('cartItems').innerHTML = 
+                    '<p class="alert alert-error">Error loading cart</p>';
+            }
+        }
+
+        function displayCart() {
+            const container = document.getElementById('cartItems');
+            
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="card">
+                        <p>Your cart is empty</p>
+                        <a href="/shop" class="btn btn-primary">Continue Shopping</a>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <img src="${item.product.image || 'https://via.placeholder.com/100'}" 
+                         alt="${item.product.name}"
+                         onerror="this.src='https://via.placeholder.com/100'">
+                    <div class="cart-item-info">
+                        <h3>${item.product.name}</h3>
+                        <p style="color: #666;">${item.product.category}</p>
+                        <div class="product-price">₹${item.product.price}</div>
+                        <div class="quantity-controls">
+                            <button onclick="updateQuantity('${item._id}', ${item.quantity - 1})">-</button>
+                            <span>${item.quantity}</span>
+                            <button onclick="updateQuantity('${item._id}', ${item.quantity + 1})">+</button>
+                        </div>
+                    </div>
+                    <div>
+                        <strong>₹${item.product.price * item.quantity}</strong>
+                        <button onclick="removeItem('${item._id}')" 
+                                class="btn btn-secondary" 
+                                style="margin-top: 1rem; padding: 0.5rem;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function updateQuantity(itemId, quantity) {
+            if (quantity < 1) {
+                removeItem(itemId);
+                return;
+            }
+            try {
+                await cartAPI.update(itemId, quantity);
+                loadCart();
+            } catch (error) {
+                alert('Error updating quantity');
+            }
+        }
+
+        async function removeItem(itemId) {
+            if (!confirm('Remove this item from cart?')) return;
+            try {
+                await cartAPI.remove(itemId);
+                loadCart();
+            } catch (error) {
+                alert('Error removing item');
+            }
+        }
+
+        function calculateTotal() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+            document.getElementById('subtotal').textContent = `₹${subtotal}`;
+            document.getElementById('total').textContent = `₹${subtotal}`;
+        }
+
+
+        loadCart();
+    </script>
+</body>
+</html>
+
