@@ -11,7 +11,7 @@ const generateToken = (userId) => {
     return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
 };
 
-// Email transporter
+// Email transporter with optimized settings for production
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     host: 'smtp.gmail.com',
@@ -23,7 +23,13 @@ const transporter = nodemailer.createTransport({
     },
     tls: {
         rejectUnauthorized: false
-    }
+    },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    pool: true, // Keep connection pool
+    maxConnections: 1,
+    maxMessages: 3
 });
 
 // Generate OTP
@@ -31,15 +37,24 @@ function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send OTP
+// Send OTP with timeout and better error handling
 router.post('/send-otp', async (req, res) => {
+    const startTime = Date.now();
+    
     try {
         const { email } = req.body;
         if (!email) {
             return res.status(400).json({ success: false, error: 'Email is required' });
         }
 
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ success: false, error: 'Invalid email format' });
+        }
+
         const otp = generateOTP();
+        console.log(`[OTP] Generating OTP for ${email} at ${new Date().toISOString()}`);
         
         const mailOptions = {
             from: {
@@ -61,11 +76,42 @@ router.post('/send-otp', async (req, res) => {
             `
         };
 
-        await transporter.sendMail(mailOptions);
-        res.json({ success: true, otp: otp });
+        // Send email with timeout
+        const sendEmailPromise = transporter.sendMail(mailOptions);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Email sending timeout after 15 seconds')), 15000)
+        );
+
+        const info = await Promise.race([sendEmailPromise, timeoutPromise]);
+        
+        const duration = Date.now() - startTime;
+        console.log(`[OTP] Email sent successfully in ${duration}ms. MessageId: ${info.messageId || 'N/A'}`);
+        
+        res.json({ 
+            success: true, 
+            otp: otp,
+            message: 'OTP sent successfully',
+            duration: duration
+        });
     } catch (error) {
-        console.error('Error sending OTP:', error);
-        res.status(500).json({ success: false, error: 'Failed to send OTP' });
+        const duration = Date.now() - startTime;
+        console.error(`[OTP] Error after ${duration}ms:`, error.message);
+        
+        // More specific error messages
+        let errorMessage = 'Failed to send OTP';
+        if (error.message.includes('timeout')) {
+            errorMessage = 'Email service timeout. Please try again.';
+        } else if (error.message.includes('authentication')) {
+            errorMessage = 'Email authentication failed. Please check email configuration.';
+        } else if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+            errorMessage = 'Cannot connect to email server. Please try again later.';
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            error: errorMessage,
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 

@@ -124,17 +124,45 @@
             }
 
             const btn = document.getElementById('sendOtpBtn');
+            const startTime = Date.now();
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
             try {
-                const data = await authAPI.sendOTP(email);
+                // Add timeout for the request (20 seconds)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+                const response = await fetch(`${window.location.origin}/api/auth/send-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to send OTP');
+                }
+
+                const data = await response.json();
+                const duration = Date.now() - startTime;
+                
                 generatedOTP = data.otp;
                 document.getElementById('originalOtp').value = data.otp;
-                showAlert('OTP sent to your email!', 'success');
+                showAlert(`OTP sent to your email! (took ${Math.round(duration/1000)}s)`, 'success');
                 btn.innerHTML = '<i class="fas fa-check"></i> OTP Sent';
             } catch (error) {
-                showAlert(error.message || 'Failed to send OTP', 'error');
+                const duration = Date.now() - startTime;
+                if (error.name === 'AbortError') {
+                    showAlert('Request timeout. The server might be starting up. Please wait a moment and try again.', 'error');
+                } else {
+                    showAlert(error.message || 'Failed to send OTP. Please try again.', 'error');
+                }
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
             }

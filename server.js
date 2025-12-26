@@ -93,9 +93,24 @@ app.get('/guide', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'guide.html'));
 });
 
-// Health check
+// Health check with database connection status
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        database: dbStatus,
+        uptime: process.uptime()
+    });
+});
+
+// Keep-alive endpoint to prevent cold starts (for Render free tier)
+app.get('/keep-alive', (req, res) => {
+    res.json({ 
+        status: 'alive', 
+        timestamp: new Date().toISOString(),
+        message: 'Server is awake'
+    });
 });
 
 // Start server
