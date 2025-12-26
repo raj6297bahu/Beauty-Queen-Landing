@@ -8,7 +8,9 @@ const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const connectDB = require('./config/database');
+const mongoose = require('mongoose');
 
 const app = express();
 
@@ -19,11 +21,22 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Session configuration with MongoDB store (production-ready)
 app.use(session({
     secret: process.env.SESSION_SECRET || 'beautyqueen_secret_2024',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        ttl: 24 * 60 * 60, // 24 hours
+        autoRemove: 'native' // Remove expired sessions automatically
+    }),
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production (HTTPS)
+        httpOnly: true, // Prevent XSS attacks
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 
 app.use(cors({
