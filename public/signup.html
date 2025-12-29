@@ -91,7 +91,6 @@
                     </div>
                 </div>
 
-                <input type="hidden" id="originalOtp">
 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">
                     <i class="fas fa-user-plus"></i> Sign Up
@@ -152,10 +151,9 @@
                 const data = await response.json();
                 const duration = Date.now() - startTime;
                 
-                generatedOTP = data.otp;
-                document.getElementById('originalOtp').value = data.otp;
                 showAlert(`OTP sent to your email! (took ${Math.round(duration/1000)}s)`, 'success');
                 btn.innerHTML = '<i class="fas fa-check"></i> OTP Sent';
+                document.getElementById('otp').focus();
             } catch (error) {
                 const duration = Date.now() - startTime;
                 if (error.name === 'AbortError') {
@@ -175,15 +173,9 @@
             const phone = document.getElementById('phone').value;
             const password = document.getElementById('password').value;
             const otp = document.getElementById('otp').value;
-            const originalOtp = document.getElementById('originalOtp').value;
 
-            if (!originalOtp) {
-                showAlert('Please verify your email with OTP first', 'error');
-                return;
-            }
-
-            if (otp !== originalOtp) {
-                showAlert('Invalid OTP', 'error');
+            if (!otp) {
+                showAlert('Please enter the OTP sent to your email', 'error');
                 return;
             }
 
@@ -192,7 +184,7 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
 
             try {
-                const data = await authAPI.signup({ name, email, phone, password, otp, originalOtp });
+                const data = await authAPI.signup({ name, email, phone, password, otp });
                 setToken(data.token);
                 showAlert('Account created successfully! Redirecting...', 'success');
                 setTimeout(() => {
